@@ -34,6 +34,9 @@ public:
 		return true;
 	}
 
+	//	Returns the CLI arguments that are not options
+	const std::vector <char*>& getArguments();
+
 	bool find(size_t descriptor);
 	bool undescribed();
 	void list();
@@ -78,8 +81,8 @@ private:
 	//	These are used to check if an option is valid
 	std::vector <Descriptor> descriptors;
 
+	//	CLI arguments that weren't options
 	std::vector <char*> nonOptions;
-	bool error = false;
 };
 
 #endif

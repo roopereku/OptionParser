@@ -101,6 +101,11 @@ bool OptionParser::find(size_t descriptor)
 	return findPassedOption(descriptor) != -1UL;
 }
 
+const std::vector <char*>& OptionParser::getArguments()
+{
+	return nonOptions;
+}
+
 size_t OptionParser::findPassedOption(size_t descriptor)
 {
 	//	There's no such descriptor
