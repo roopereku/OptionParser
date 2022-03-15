@@ -5,8 +5,12 @@ OBJECT_DEBUG	=	$(addprefix obj/debug/,$(addsuffix .o,$(SOURCE)))
 OBJECT_RELEASE	=	$(addprefix obj/release/,$(addsuffix .o,$(SOURCE)))
 
 debug:	obj/ $(OBJECT_DEBUG)
+	@make -C ..
+	@g++ -o x $(OBJECT_DEBUG) ../obj/debug/*.cc.o
 
 release:	obj/ $(OBJECT_RELEASE)
+	@make -C ..
+	@g++ -o x $(OBJECT_RELEASE) ../obj/release/*.cc.o
 
 obj/debug/%.cc.o:	%.cc $(HEADER)
 	@echo "Building $< in debug mode"
