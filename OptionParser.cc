@@ -26,9 +26,18 @@ OptionParser::OptionParser(int argc, char** argv)
 		//	Long option
 		else if(hyphens == 2)
 		{
-			/*	TODO if the option is just "--", assume that
-			 *	the rest of argv are non-options */
+			size_t length = strlen(argv[i]);
 
+			//	If the option is "--", append the rest to nonOptions
+			if(length == 2)
+			{
+				for(i++; i < argc; i++)
+					nonOptions.emplace_back(argv[i]);
+
+				break;
+			}
+
+			//	Add a long option excluding the hyphens
 			passed.emplace_back(argv[i] + 2, true);
 		}
 
