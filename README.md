@@ -96,7 +96,10 @@ int main(int argc, char** argv)
 }
 ```
 
-# TODO
+# NOTES
 Because of the way the `OptionParser` constructor works, the list of non-options might not be complete until
 everything is described. This should be rather simple to fix, but for the time being you should **NOT** try
 to access said values before you describe everything and call `OptionParser::undescribed()`.
+
+`OptionParser` also relies on `argv` not being modified so it's a good idea to not mess with it. It also modifies
+`argv` to some extent so you shouldn't rely on argv being completely original.
