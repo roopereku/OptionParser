@@ -14,13 +14,19 @@ OptionParser::OptionParser(int argc, char** argv)
 
 		//	TODO make sure that the option names aren't whitespace
 
+		char* c;
+
 		//	Short option
 		if(hyphens == 1)
 		{
 			/*	Because options like -abc should be parsed like
 			 *	-a -b -c, add each character as their own option */
-			for(size_t c = 1; argv[i][c] != 0; c++)
-				passed.emplace_back(argv[i] + c, false);
+			for(c = argv[i] + 1; *c != 0 && *c != '='; c++)
+				passed.emplace_back(c, false);
+
+			//	Because strchr returns 0 instead of "\0", do the same here
+			if(*c == 0)
+				c = 0;
 		}
 
 		//	Long option
@@ -28,7 +34,7 @@ OptionParser::OptionParser(int argc, char** argv)
 		{
 			size_t length = strlen(argv[i]);
 
-			//	If the option is "--", append the rest to nonOptions
+			//	If the option is "--", append the rest of argv to nonOptions
 			if(length == 2)
 			{
 				for(i++; i < argc; i++)
@@ -36,6 +42,9 @@ OptionParser::OptionParser(int argc, char** argv)
 
 				break;
 			}
+
+			//	Look for "=" inside the option name
+			c = strchr(argv[i] + 2, '=');
 
 			//	Add a long option excluding the hyphens
 			passed.emplace_back(argv[i] + 2, true);
@@ -54,6 +63,19 @@ OptionParser::OptionParser(int argc, char** argv)
 			nonOptions.emplace_back(argv[i]);
 			continue;
 		}
+
+		/*	Because options can be passed as "--option=value" or "-o=value",
+		 *	check if "c" that was set earlier is something other than a null */
+		if(!c) continue;
+
+		//	The value comes right after the option name
+		passed.back().value = c + 1;
+		passed.back().valueInOption = true;
+
+		/*	Because the names and values of the passed options point to argv,
+		 *	we can just set the "=" to a null terminator. All the sudden the
+		 *	name and the value are treated as different entities */
+		*c = 0;
 	}
 }
 
@@ -73,6 +95,14 @@ size_t OptionParser::describe(const char* longName, char shortName, const char* 
 			 *	a value, move the value to non-options */
 			if(!value && opt.value)
 			{
+				//	The user can pass "--option=value". If there should not be a value, report an error
+				if(opt.valueInOption)
+				{
+					//	TODO show the short name if it was passed
+					fprintf(stderr, "Option '%s' doesn't take a value but one was passed with '='\n", descriptors[index].longName);
+					return -1UL;
+				}
+
 				printf("Moving '%s'\n", opt.value);
 				nonOptions.emplace_back(opt.value);
 				opt.value = nullptr;
@@ -83,7 +113,7 @@ size_t OptionParser::describe(const char* longName, char shortName, const char* 
 			{
 				//	TODO show the short name if it was passed
 				fprintf(stderr, "Option '%s' requires a value\n", descriptors[index].longName);
-				return -1;
+				return -1UL;
 			}
 		}
 	}

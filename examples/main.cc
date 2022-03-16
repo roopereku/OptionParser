@@ -4,8 +4,9 @@ int main(int argc, char** argv)
 {
 	OptionParser opt(argc, argv);
 
-	auto test = opt.describe("test", 't', "Test option", false);
-	auto test2 = opt.describe("test2", "Test option 2", true);
+	auto test = opt.describe("test", '1', "Test option", false);
+	auto test2 = opt.describe("test2", '2', "Test option 2", true);
+	auto test3 = opt.describe("test3", '3', "Test option 2", true);
 
 	if(opt.undescribed())
 		return 1;

@@ -53,6 +53,7 @@ private:
 
 		bool isLong;
 		bool consumed = false;
+		bool valueInOption = false;
 	};
 
 	struct Descriptor
