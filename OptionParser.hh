@@ -3,6 +3,7 @@
 
 #include <sstream>
 #include <vector>
+#include <string>
 
 class OptionParser
 {
@@ -19,6 +20,11 @@ public:
 		//	Find the next possible passed option matching the descriptor
 		size_t passedOptionIndex = findPassedOption(descriptor);
 		if(passedOptionIndex == -1UL) return false;
+
+		/*	TODO
+		 *	Since calling operator ">>" of stringstream with a char* on
+		 *	the right doesn't seem to work that well, we could check at compile
+		 *	time if "value" is a char* and just assign the value to it without stringstream */
 
 		//	Safety check because this function can be called when user passes no value
 		if(descriptors[descriptor].requireValue)
