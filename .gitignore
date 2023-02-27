@@ -1,3 +1,4 @@
 .*.swp
-obj/
-x
+build/
+compile_commands.json
+.cache
