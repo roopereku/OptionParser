@@ -29,7 +29,7 @@ public:
 	bool find(OptionWithoutValue& opt);
 
 private:
-	void validateOptions();
+	void validateArguments();
 	void listOptions();
 
 	size_t getHyphenCount(const char* str);
@@ -37,6 +37,7 @@ private:
 
 	const char* consumeValue(OptionDetail& opt);
 	int consumeKey(OptionDetail& opt, const char*& attachedValue, bool& longName);
+
 	int findKey(OptionDetail& opt);
 	int updateOffset(OptionDetail& opt);
 

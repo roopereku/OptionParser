@@ -151,9 +151,9 @@ int OptionParser::findKey(OptionDetail& opt)
 		if(hyphenCount == 1 && opt.shortName)
 		{
 			// Does one of the short options match what we're looking for
-			for(char* c = argv[i] + 1; *c != 0; c++)
+			for(size_t c = 0; c < keyLength; c++)
 			{
-				if(*c == opt.shortName)
+				if(argv[i][1 + c] == opt.shortName)
 					return i;
 			}
 		}
@@ -165,7 +165,7 @@ int OptionParser::findKey(OptionDetail& opt)
 int OptionParser::consumeKey(OptionDetail& opt, const char*& attachedValue, bool& longName)
 {
 	if(!validationDone)
-		validateOptions();
+		validateArguments();
 
 	if(opt.offset == -1)
 		return -1;
@@ -224,6 +224,7 @@ int OptionParser::consumeKey(OptionDetail& opt, const char*& attachedValue, bool
 
 OptionWithoutValue& OptionParser::addSwitch(const char* longName, char shortName)
 {
+	// TODO Check if the given names already exist
 	options.emplace_back(std::make_shared <OptionWithoutValue> (*this, longName, shortName));
 	options.back()->offset = findKey(*options.back());
 	return static_cast <OptionWithoutValue&> (*options.back());
@@ -242,10 +243,65 @@ int OptionParser::updateOffset(OptionDetail& opt)
 	return ret;
 }
 
-void OptionParser::validateOptions()
+void OptionParser::validateArguments()
 {
-	listOptions();
 	validationDone = true;
+
+	for(int i = 0; i < optionsEnd; i++)
+	{
+		size_t hyphenCount = getHyphenCount(argv[i]);
+		size_t keyLength = 0;
+
+		// Find the length of the argument or the length up until '='
+		while(argv[i][keyLength] != '=' && argv[i][keyLength] != 0)
+			keyLength++;
+
+		keyLength -= hyphenCount;
+		bool found = false;
+
+		if(hyphenCount == 2)
+		{
+			// Does the current argument match any valid long option
+			for(auto& opt : options)
+			{
+				if(opt->longName && strncmp(argv[i] + hyphenCount, opt->longName, keyLength) == 0)
+				{
+					found = true;
+					break;
+				}
+			}
+
+			if(!found)
+			{
+				printf("Invalid option %s\n", argv[i]);
+				listOptions();
+			}
+		}
+
+		// Does the current argument match any valid short option
+		else if(hyphenCount == 1)
+		{
+			for(size_t c = 0; c < keyLength; c++)
+			{
+				found = false;
+				for(auto& opt : options)
+				{
+					if(argv[i][1 + c] == opt->shortName)
+					{
+						found = true;
+						break;
+					}
+				}
+
+				if(!found)
+				{
+					if(keyLength > 1) printf("Invalid option -%c in %s\n", argv[i][1 + c], argv[i]);
+					else printf("Invalid option -%c\n", argv[i][1 + c]);
+					listOptions();
+				}
+			}
+		}
+	}
 }
 
 void OptionParser::listOptions()
@@ -267,4 +323,6 @@ void OptionParser::listOptions()
 			opt->longName ? "--" : "  ", opt->longName ? opt->longName :  "",
 			gap, ' ', opt->descriptionText);
 	}
+
+	std::quick_exit(1);
 }

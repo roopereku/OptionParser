@@ -6,6 +6,7 @@
 template <typename T>
 OptionWithValue <T>& OptionParser::add(const char* longName, char shortName)
 {
+	// TODO Check if the given names already exist
 	options.emplace_back(std::make_shared <OptionWithValue <T>> (*this, longName, shortName));
 	options.back()->offset = findKey(*options.back());
 	return static_cast <OptionWithValue <T>&> (*options.back());
