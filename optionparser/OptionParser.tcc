@@ -38,4 +38,18 @@ OptionWithValue <T>::operator T()
 		? value : (!defValue ? (fail(), value) : defValue.value());
 }
 
+template <typename T>
+OptionWithValue <T>& OptionWithValue <T>::description(const char* value)
+{
+	descriptionText = value;
+	return *this;
+}
+
+template <typename T>
+OptionWithValue <T>& OptionWithValue <T>::defaultValue(const T& value)
+{
+	defValue.emplace(value);
+	return *this;
+}
+
 #endif

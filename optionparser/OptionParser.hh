@@ -30,11 +30,13 @@ public:
 
 private:
 	void validateOptions();
+	void listOptions();
+
 	size_t getHyphenCount(const char* str);
 	bool isValue(int index);
 
 	const char* consumeValue(OptionDetail& opt);
-	int consumeKey(OptionDetail& opt, const char*& attachedValue);
+	int consumeKey(OptionDetail& opt, const char*& attachedValue, bool& longName);
 	int findKey(OptionDetail& opt);
 	int updateOffset(OptionDetail& opt);
 
@@ -47,5 +49,4 @@ private:
 };
 
 #include <OptionParser.tcc>
-
 #endif

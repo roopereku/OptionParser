@@ -1,20 +1,33 @@
 #include <OptionParser.hh>
 
 #include <cstdio>
-#include <vector>
-#include <string>
-#include <memory>
+
+class SocketTCP
+{
+public:
+	SocketTCP(const char* host, unsigned port)
+	{
+		printf("tcp socket at %s:%u\n", host, port);
+	}
+};
 
 int main(int argc, char** argv)
 {
 	OptionParser opts(argc, argv);
 
-	auto& test = opts.add <int> ("test1");
-	auto& test2 = opts.add <int> ("test2");
+	auto& useTcp = opts.addSwitch("tcp", 't')
+		.description("Use to enable TCP");
 
-	while(test.remaining())
-		printf("Value is %d\n", (int)test);
+	auto& host = opts.add <const char*> ("host")
+		.defaultValue("localhost")
+		.description("Which address to host on");
 
-	while(test2.remaining())
-		printf("Value2 is %d\n", (int)test2);
+	auto& port = opts.add <unsigned> ('p')
+		.defaultValue(80)
+		.description("What port to host on");
+
+	if(useTcp)
+	{
+		SocketTCP socket(host, port);
+	}
 }

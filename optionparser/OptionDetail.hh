@@ -13,7 +13,7 @@ public:
 	}
 
 	void fail();
-	bool remaining();
+	bool exists();
 
 	friend class OptionParser;
 
@@ -21,6 +21,7 @@ protected:
 	OptionParser& opts;
 	int offset = 0;
 
+	const char* descriptionText = "No description";
 	const char* longName;
 	char shortName;
 };
@@ -33,6 +34,9 @@ public:
 		OptionDetail(opts, longName, shortName)
 	{
 	}
+	
+	OptionWithValue& defaultValue(const T& value);
+	OptionWithValue& description(const char* value);
 
 	operator T();
 
@@ -47,6 +51,8 @@ public:
 		OptionDetail(opts, longName, shortName)
 	{
 	}
+
+	OptionWithoutValue& description(const char* value);
 
 	operator bool();
 };
