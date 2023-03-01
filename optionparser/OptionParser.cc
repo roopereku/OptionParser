@@ -155,6 +155,24 @@ OptionWithoutValue& OptionParser::addSwitch(char shortName)
 	return addSwitch(nullptr, shortName);
 }
 
+const char* OptionParser::nextArgument()
+{
+	for(int i = 0; i < argc; i++)
+	{
+		// If the argument isn't consumed and isn't an option, return it
+		if(argv[i] != nullptr && argv[i][0] != '-')
+		{
+			const char* ret = argv[i];
+			argv[i] = nullptr;
+
+			return ret;
+		}
+	}
+
+	// No normal argument left
+	return nullptr;
+}
+
 void OptionParser::validateArguments()
 {
 	if(validationDone)

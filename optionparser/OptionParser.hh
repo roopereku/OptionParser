@@ -21,6 +21,7 @@ public:
 	OptionWithoutValue& addSwitch(char shortName);
 
 	void validateArguments();
+	const char* nextArgument();
 
 private:
 	void fillValue(OptionDetail& opt, int& i, bool longName, char* equals);

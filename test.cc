@@ -26,4 +26,10 @@ int main(int argc, char** argv)
 		verboseLevel++;
 
 	usePort(port);
+
+	const char* argument;
+	while((argument = opts.nextArgument()) != nullptr)
+	{
+		printf("Argument '%s'\n", argument);
+	}
 }
