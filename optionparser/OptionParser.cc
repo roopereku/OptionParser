@@ -178,7 +178,7 @@ void OptionParser::validateArguments()
 			for(char* c = argv[i] + 1; *c != 0; c++)
 			{
 				// Don't process "Cancelled" characters
-				if(*c != 0x18)
+				if(*c == 0x18)
 					continue;
 
 				printf("Invalid option -%c\n", *c);
