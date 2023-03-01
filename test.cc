@@ -2,32 +2,28 @@
 
 #include <cstdio>
 
-class SocketTCP
+int verboseLevel = 0;
+
+void usePort(int port)
 {
-public:
-	SocketTCP(const char* host, unsigned port)
-	{
-		printf("tcp socket at %s:%u\n", host, port);
-	}
-};
+	if(verboseLevel > 0) printf("debug log 1\n");
+	if(verboseLevel > 1) printf("debug log 2\n");
+
+	printf("port is %d\n", port);
+}
 
 int main(int argc, char** argv)
 {
 	OptionParser opts(argc, argv);
 
-	auto& useTcp = opts.addSwitch("tcp", 't')
-		.description("Use to enable TCP");
+	auto& verbose = opts.addSwitch('v')
+		.description("Stackable verbose mode");
 
-	auto& host = opts.add <const char*> ("host")
-		.defaultValue("localhost")
-		.description("Which address to host on");
+	auto& port = opts.add <int> ("port", 'p')
+		.description("What port to listen on");
 
-	auto& port = opts.add <unsigned> ('p')
-		.defaultValue(80)
-		.description("What port to host on");
+	while(verbose)
+		verboseLevel++;
 
-	if(useTcp)
-	{
-		SocketTCP socket(host, port);
-	}
+	usePort(port);
 }

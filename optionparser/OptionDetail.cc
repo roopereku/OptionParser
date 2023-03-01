@@ -11,7 +11,7 @@ void OptionDetail::fail()
 
 bool OptionDetail::exists()
 {
-	return offset != -1;
+	return !values.empty();
 }
 
 OptionWithoutValue& OptionWithoutValue::description(const char* value)
@@ -22,5 +22,36 @@ OptionWithoutValue& OptionWithoutValue::description(const char* value)
 
 OptionWithoutValue::operator bool()
 {
-	return opts.find(*this);
+	opts.validateArguments();
+	bool ret = exists();
+	values.pop();
+
+	return ret;
+}
+
+template <>
+OptionWithValue <const char*>::operator const char*()
+{
+	opts.validateArguments();
+
+	// If there are no remaining values, return the default value or error out
+	if(values.empty())
+		return defValue ? defValue.value() : (fail(), "");
+
+	const char* value = values.front();
+	return values.pop(), value;
+
+}
+
+template <>
+OptionWithValue <std::string>::operator std::string()
+{
+	opts.validateArguments();
+
+	// If there are no remaining values, return the default value or error out
+	if(values.empty())
+		return defValue ? defValue.value() : (fail(), std::string());
+
+	std::string value = std::string(values.front());
+	return values.pop(), value;
 }

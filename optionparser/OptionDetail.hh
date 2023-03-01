@@ -2,6 +2,8 @@
 #define OPTION_DETAIL_HH
 
 #include <optional>
+#include <string>
+#include <queue>
 
 class OptionParser;
 class OptionDetail
@@ -18,8 +20,10 @@ public:
 	friend class OptionParser;
 
 protected:
+	virtual bool requiresValue()=0;
+
+	std::queue <const char*> values;
 	OptionParser& opts;
-	int offset = 0;
 
 	const char* descriptionText = "No description";
 	const char* longName;
@@ -39,10 +43,17 @@ public:
 	OptionWithValue& description(const char* value);
 
 	operator T();
+	bool requiresValue() override { return true; }
 
 private:
 	std::optional <T> defValue;
 };
+
+template <>
+OptionWithValue <const char*>::operator const char*();
+
+template <>
+OptionWithValue <std::string>::operator std::string();
 
 class OptionWithoutValue : public OptionDetail
 {
@@ -55,6 +66,7 @@ public:
 	OptionWithoutValue& description(const char* value);
 
 	operator bool();
+	bool requiresValue() override { return false; }
 };
 
 #endif

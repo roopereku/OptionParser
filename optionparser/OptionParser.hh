@@ -20,16 +20,11 @@ public:
 	OptionWithoutValue& addSwitch(const char* longName, char shortName = 0);
 	OptionWithoutValue& addSwitch(char shortName);
 
-	template <typename T>
-	bool getValue(OptionWithValue <T>& opt, T& value);
-
-	bool getValue(OptionWithValue <const char*>& opt, const char*& value);
-	bool getValue(OptionWithValue <std::string>& opt, std::string& value);
-
-	bool find(OptionWithoutValue& opt);
+	void validateArguments();
 
 private:
-	void validateArguments();
+	void fillValue(OptionDetail& opt, int& i, bool longName, char* equals);
+	void fillValues(OptionDetail& opt);
 	void listOptions();
 
 	size_t getHyphenCount(const char* str);
@@ -38,7 +33,6 @@ private:
 	const char* consumeValue(OptionDetail& opt);
 	int consumeKey(OptionDetail& opt, const char*& attachedValue, bool& longName);
 
-	int findKey(OptionDetail& opt);
 	int updateOffset(OptionDetail& opt);
 
 	int argc;

@@ -8,7 +8,7 @@ OptionWithValue <T>& OptionParser::add(const char* longName, char shortName)
 {
 	// TODO Check if the given names already exist
 	options.emplace_back(std::make_shared <OptionWithValue <T>> (*this, longName, shortName));
-	options.back()->offset = findKey(*options.back());
+	fillValues(*options.back());
 	return static_cast <OptionWithValue <T>&> (*options.back());
 }
 
@@ -19,24 +19,20 @@ OptionWithValue <T>& OptionParser::add(char shortName)
 }
 
 template <typename T>
-bool OptionParser::getValue(OptionWithValue <T>& opt, T& value)
-{
-	const char* ret = consumeValue(opt);
-	if(ret == nullptr) return false;
-
-	// TODO Check if stringstream fails
-	std::stringstream ss(ret);
-	ss >> value;
-
-	return true;
-}
-
-template <typename T>
 OptionWithValue <T>::operator T()
 {
+	opts.validateArguments();
 	T value;
-	return opts.getValue(*this, value)
-		? value : (!defValue ? (fail(), value) : defValue.value());
+
+	// If there are no remaining values, return the default value or error out
+	if(values.empty())
+		return defValue ? defValue.value() : (fail(), value);
+
+	// Convert the next value to the given format
+	std::stringstream ss(values.front());
+	ss >> value;
+
+	return values.pop(), value;
 }
 
 template <typename T>

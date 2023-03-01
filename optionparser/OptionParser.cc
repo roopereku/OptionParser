@@ -37,14 +37,34 @@ bool OptionParser::isValue(int index)
 			argv[index][0] != '-';
 }
 
-bool OptionParser::find(OptionWithoutValue& opt)
+void OptionParser::fillValue(OptionDetail& opt, int& i, bool longName, char* equals)
 {
-	bool longName;
-	const char* attachedValue = nullptr;
-	int key = consumeKey(opt, attachedValue, longName);
+	// If the option requires a value, use the attached value or the next argument
+	if(opt.requiresValue())
+	{
+		// Is there no "=" symbol?
+		if(!equals)
+		{
+			// Make sure that the next argument is a valid value
+			if(!isValue(i + 1))
+			{
+				if(longName) printf("Option --%s requires a value\n", opt.longName);
+				else printf("Option -%c requires a value\n", opt.shortName);
 
-	// Switch options are not supposed to take values
-	if(attachedValue)
+				std::quick_exit(1);
+			}
+
+			// Save the next argument to the given option
+			opt.values.push(argv[++i]);
+			argv[i] = nullptr;
+		}
+
+		// Save the attached value to the given option
+		else opt.values.push(equals + 1);
+	}
+
+	// Error out if a value is attached to a switch option
+	else if(equals)
 	{
 		if(longName) printf("Option --%s doesn't take a value\n", opt.longName);
 		else printf("Option -%c doesn't take a value\n", opt.shortName);
@@ -52,181 +72,81 @@ bool OptionParser::find(OptionWithoutValue& opt)
 		std::quick_exit(1);
 	}
 
-	// Was the option found?
-	return key != -1;
+	// Save a blank value to a switch option
+	else opt.values.push("");
 }
 
-bool OptionParser::getValue(OptionWithValue <const char*>& opt, const char*& value)
+void OptionParser::fillValues(OptionDetail& opt)
 {
-	const char* ret = consumeValue(opt);
-	if(ret == nullptr) return false;
-
-	value = ret;
-	return true;
-}
-
-bool OptionParser::getValue(OptionWithValue <std::string>& opt, std::string& value)
-{
-	const char* ret = consumeValue(opt);
-	if(ret == nullptr) return false;
-
-	value = std::string(ret);
-	return true;
-}
-
-const char* OptionParser::consumeValue(OptionDetail& opt)
-{
-	const char* value;
-	const char* attachedValue = "";
-
-	bool longName;
-	int key = consumeKey(opt, attachedValue, longName);
-
-	if(key == -1)
-		return nullptr;
-
-	/* consumeKey can null attachedValue if a found option is
-	 * accessed with it's short name, and there's another
-	 * short name right after it. This means that the found
-	 * option doesn't have a value */
-	if(attachedValue == nullptr)
-	{
-		if(longName) printf("Option --%s requires a value\n", opt.longName);
-		else printf("Option -%c requires a value\n", opt.shortName);
-
-		std::quick_exit(1);
-	}
-
-	/* The attached value hasn't changed if the
-	 * first character is a null terminator */
-	if(*attachedValue == 0)
-	{
-		// Is the next argument not a valid value
-		if(!isValue(key + 1))
-		{
-			if(longName) printf("Option --%s requires a value\n", opt.longName);
-			else printf("Option -%c requires a value\n", opt.shortName);
-
-			std::quick_exit(1);
-		}
-
-		// Save and consume the next argument
-		value = argv[key + 1];
-		argv[key + 1] = nullptr;
-	}
-
-	// Use the attached value as the result value
-	else value = attachedValue;
-
-	return value;
-}
-
-int OptionParser::findKey(OptionDetail& opt)
-{
-	for(int i = opt.offset; i < optionsEnd; i++)
+	for(int i = 0; i < optionsEnd; i++)
 	{
 		// Don't process consumed arguments
 		if(argv[i] == nullptr)
 			continue;
 
 		size_t hyphenCount = getHyphenCount(argv[i]);
-		size_t keyLength = 0;
+		bool found = false;
+		bool longName;
 
-		// Find the length of the argument or the length up until '='
-		while(argv[i][keyLength] != '=' && argv[i][keyLength] != 0)
-			keyLength++;
+		// If there's an attached value, null terminate the delimiter
+		char* equals = strchr(argv[i], '=');
+		if(equals) *equals = 0;
 
-		// Remove the hyphens from the key length
-		keyLength -= hyphenCount;
-
-		// Is the argument a long option?
 		if(hyphenCount == 2 && opt.longName)
 		{
-			// Does the argument match the option that we're looking for
-			if(strncmp(argv[i] + 2, opt.longName, keyLength) == 0)
-				return i;
+			// Does the current argument match the given option?
+			if(strcmp(argv[i] + hyphenCount, opt.longName) == 0)
+			{
+				found = true;
+				argv[i] = nullptr;
+
+				// Add a new value to the matching option
+				fillValue(opt, i, true, equals);
+			}
 		}
 
-		// Is the argument a short option
 		if(hyphenCount == 1 && opt.shortName)
 		{
-			// Does one of the short options match what we're looking for
-			for(size_t c = 0; c < keyLength; c++)
+			bool isLast = false;
+			for(char* c = argv[i] + 1; *c != 0; c++)
 			{
-				if(argv[i][1 + c] == opt.shortName)
-					return i;
-			}
-		}
-	}
-
-	return -1;
-}
-
-int OptionParser::consumeKey(OptionDetail& opt, const char*& attachedValue, bool& longName)
-{
-	if(!validationDone)
-		validateArguments();
-
-	if(opt.offset == -1)
-		return -1;
-
-	size_t hyphenCount = getHyphenCount(argv[opt.offset]);
-
-	char* equals = strchr(argv[opt.offset], '=');
-	if(equals) *equals = 0;
-
-	if(hyphenCount == 2)
-	{
-		// If '=', whatever's after it is the attached value
-		if(equals) attachedValue = equals + 1;
-
-		longName = true;
-		argv[opt.offset] = nullptr;
-		return updateOffset(opt);
-	}
-
-	else if(hyphenCount == 1)
-	{
-		longName = false;
-
-		// Loop through each character after the single hyphen
-		for(char* c = argv[opt.offset] + 1; *c != 0; c++)
-		{
-			if(*c == opt.shortName)
-			{
-				if(equals)
+				// Does the current character match the given option?
+				if(*c == opt.shortName)
 				{
-					// Is this not the last character?
-					if(*(c + 1) != 0)
+					/* The current character is the last one if
+					 * the next character is a null terminator */
+					isLast = *(c + 1) == 0;
+
+					// Only the last character can receive a value
+					if(opt.requiresValue() && !isLast)
 					{
-						/* Only the option accessed by the last character
-						 * can have an attached value */
-						attachedValue = nullptr;
-						*equals = '=';
+						printf("Option -%c requires a value\n", *c);
+						std::quick_exit(1);
 					}
 
-					// This is the last character so save the attached value
-					else attachedValue = equals + 1;
+					// "Cancel" the current character as it's no longer needed
+					*c = 0x18;
+					found = true;
+
+					// Add a new value to the matching option
+					fillValue(opt, i, false, isLast ? equals : nullptr);
 				}
-
-				// "Cancel" the current character
-				*c = 0x18;
-				return updateOffset(opt);
 			}
+
+			/* If the matching option was the last character in a group
+			 * of short options, let's not restore the "=" symbol */
+			if(isLast) continue;
 		}
+
+		if(equals) *equals = '=';
 	}
-
-	// Revert the '=' symbol if we've not returned yet
-	*equals = '=';
-
-	return -1;
 }
 
 OptionWithoutValue& OptionParser::addSwitch(const char* longName, char shortName)
 {
 	// TODO Check if the given names already exist
 	options.emplace_back(std::make_shared <OptionWithoutValue> (*this, longName, shortName));
-	options.back()->offset = findKey(*options.back());
+	fillValues(*options.back());
 	return static_cast <OptionWithoutValue&> (*options.back());
 }
 
@@ -235,73 +155,39 @@ OptionWithoutValue& OptionParser::addSwitch(char shortName)
 	return addSwitch(nullptr, shortName);
 }
 
-int OptionParser::updateOffset(OptionDetail& opt)
-{
-	int ret = opt.offset;
-	opt.offset = findKey(opt);
-
-	return ret;
-}
-
 void OptionParser::validateArguments()
 {
-	validationDone = true;
+	if(validationDone)
+		return;
 
-	for(int i = 0; i < optionsEnd; i++)
+	for(int i = 0; i < argc; i++)
 	{
+		if(argv[i] == nullptr || i == optionsEnd)
+			continue;
+
 		size_t hyphenCount = getHyphenCount(argv[i]);
-		size_t keyLength = 0;
-
-		// Find the length of the argument or the length up until '='
-		while(argv[i][keyLength] != '=' && argv[i][keyLength] != 0)
-			keyLength++;
-
-		keyLength -= hyphenCount;
-		bool found = false;
 
 		if(hyphenCount == 2)
 		{
-			// Does the current argument match any valid long option
-			for(auto& opt : options)
-			{
-				if(opt->longName && strncmp(argv[i] + hyphenCount, opt->longName, keyLength) == 0)
-				{
-					found = true;
-					break;
-				}
-			}
+			printf("Invalid option '%s'\n", argv[i]);
+			listOptions();
+		}
 
-			if(!found)
+		else if(hyphenCount == 1)
+		{
+			for(char* c = argv[i] + 1; *c != 0; c++)
 			{
-				printf("Invalid option %s\n", argv[i]);
+				// Don't process "Cancelled" characters
+				if(*c != 0x18)
+					continue;
+
+				printf("Invalid option -%c\n", *c);
 				listOptions();
 			}
 		}
-
-		// Does the current argument match any valid short option
-		else if(hyphenCount == 1)
-		{
-			for(size_t c = 0; c < keyLength; c++)
-			{
-				found = false;
-				for(auto& opt : options)
-				{
-					if(argv[i][1 + c] == opt->shortName)
-					{
-						found = true;
-						break;
-					}
-				}
-
-				if(!found)
-				{
-					if(keyLength > 1) printf("Invalid option -%c in %s\n", argv[i][1 + c], argv[i]);
-					else printf("Invalid option -%c\n", argv[i][1 + c]);
-					listOptions();
-				}
-			}
-		}
 	}
+
+	validationDone = true;
 }
 
 void OptionParser::listOptions()
