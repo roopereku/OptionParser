@@ -9,7 +9,7 @@
 class OptionParser
 {
 public:
-	OptionParser(int argc, char** argv);
+	OptionParser(int argc, char** argv, bool addHelp = true);
 
 	template <typename T>
 	OptionWithValue <T>& add(const char* longName, char shortName = 0);	
@@ -31,17 +31,13 @@ private:
 	size_t getHyphenCount(const char* str);
 	bool isValue(int index);
 
-	const char* consumeValue(OptionDetail& opt);
-	int consumeKey(OptionDetail& opt, const char*& attachedValue, bool& longName);
-
-	int updateOffset(OptionDetail& opt);
-
 	int argc;
 	int optionsEnd;
 	bool validationDone = false;
 
 	char** argv;
 	std::vector <std::shared_ptr <OptionDetail>> options;
+	OptionWithoutValue* help = nullptr;
 };
 
 #include <OptionParser.tcc>

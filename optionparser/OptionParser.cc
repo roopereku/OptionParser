@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <cstring>
 
-OptionParser::OptionParser(int argc, char** argv) : argc(argc - 1), argv(argv + 1)
+OptionParser::OptionParser(int argc, char** argv, bool addHelp) : argc(argc - 1), argv(argv + 1)
 {
 	for(int i = 0; i < this->argc; i++)
 	{
@@ -18,7 +18,13 @@ OptionParser::OptionParser(int argc, char** argv) : argc(argc - 1), argv(argv + 
 		}
 	}
 
+	// If we've not returned yet, there can be as many options as argc
 	optionsEnd = this->argc;
+
+
+	// If the default help should be added, add it
+	if(addHelp)
+		help = &addSwitch("help", 'h').description("Show this help message");
 }
 
 size_t OptionParser::getHyphenCount(const char* str)
@@ -204,6 +210,10 @@ void OptionParser::validateArguments()
 			}
 		}
 	}
+
+	// If the help option exists, use it
+	if(help != nullptr && help->exists())
+		listOptions();
 
 	validationDone = true;
 }
